@@ -1,0 +1,357 @@
+{
+  "entities": {
+    "UserWorkspace": {
+      "title": "UserWorkspace",
+      "description": "Private user workspace metadata and budget preference isolated per authenticated Firebase user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "monthlyBudget": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Consumable yarn/material or reusable crochet tool in the user's workshop inventory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 60 },
+        "itemType": { "type": "string", "enum": ["consumible", "herramienta"] },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 40 },
+        "unitCost": { "type": "number" },
+        "minStock": { "type": "number" },
+        "observations": { "type": "string", "maxLength": 1000 },
+        "estimatedWearCost": { "type": "number" },
+        "status": { "type": "string", "enum": ["activo", "baja"] },
+        "retiredAt": { "type": "string", "maxLength": 32 },
+        "retireReason": { "type": "string", "maxLength": 300 },
+        "retireNotes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "updatedAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "category",
+        "itemType",
+        "quantity",
+        "unit",
+        "unitCost",
+        "minStock",
+        "observations",
+        "estimatedWearCost",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Material or tool purchase record linked to an inventory item.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "code": { "type": "string", "maxLength": 40 },
+        "inventoryItemId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "materialName": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 60 },
+        "itemType": { "type": "string", "enum": ["consumible", "herramienta"] },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 40 },
+        "purchasedQuantity": { "type": "number" },
+        "purchasedUnit": { "type": "string", "maxLength": 40 },
+        "contentPerUnit": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "unitCost": { "type": "number" },
+        "supplier": { "type": "string", "maxLength": 200 },
+        "date": { "type": "string", "maxLength": 32 },
+        "invoiceRef": { "type": "string", "maxLength": 120 },
+        "observations": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "code",
+        "inventoryItemId",
+        "materialName",
+        "category",
+        "itemType",
+        "quantity",
+        "unit",
+        "totalPrice",
+        "unitCost",
+        "supplier",
+        "date",
+        "invoiceRef",
+        "observations",
+        "createdAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "InventoryMovement": {
+      "title": "InventoryMovement",
+      "description": "Audit trail entry for inventory stock inflows and outflows.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "inventoryItemId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "itemName": { "type": "string", "maxLength": 200 },
+        "type": {
+          "type": "string",
+          "enum": ["entrada_compra", "salida_pedido", "ajuste_manual", "devolucion_material", "baja_herramienta"]
+        },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 40 },
+        "date": { "type": "string", "maxLength": 32 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "referenceType": { "type": "string", "enum": ["compra", "pedido", "manual", "baja"] },
+        "referenceId": { "type": "string", "maxLength": 128 },
+        "referenceLabel": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "inventoryItemId",
+        "itemName",
+        "type",
+        "quantity",
+        "unit",
+        "date",
+        "reason",
+        "createdAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "SavedCalculation": {
+      "title": "SavedCalculation",
+      "description": "Saved crochet production cost and pricing calculation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "productName": { "type": "string", "maxLength": 200 },
+        "materials": { "type": "array" },
+        "laborMode": { "type": "string", "enum": ["tiempo", "fijo"] },
+        "timeValue": { "type": "number" },
+        "timeUnit": { "type": "string", "enum": ["horas", "minutos"] },
+        "hourlyRate": { "type": "number" },
+        "laborCost": { "type": "number" },
+        "toolsWearAuto": { "type": "number" },
+        "toolsWearCost": { "type": "number" },
+        "additionalCosts": { "type": "number" },
+        "totalProductionCost": { "type": "number" },
+        "desiredMarginPercent": { "type": "number" },
+        "suggestedPrice": { "type": "number" },
+        "finalSalePrice": { "type": "number" },
+        "estimatedProfit": { "type": "number" },
+        "actualMarginPercent": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "updatedAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "productName",
+        "materials",
+        "laborMode",
+        "timeValue",
+        "timeUnit",
+        "hourlyRate",
+        "laborCost",
+        "toolsWearAuto",
+        "toolsWearCost",
+        "additionalCosts",
+        "totalProductionCost",
+        "desiredMarginPercent",
+        "suggestedPrice",
+        "finalSalePrice",
+        "estimatedProfit",
+        "actualMarginPercent",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Private customer contact and notes owned by the authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 60 },
+        "email": { "type": "string", "maxLength": 320 },
+        "address": { "type": "string", "maxLength": 300 },
+        "observations": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "phone",
+        "email",
+        "address",
+        "observations",
+        "createdAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Crochet customer order with line items and consumed inventory tracking.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderNumber": { "type": "string", "maxLength": 40 },
+        "clientId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "requestDate": { "type": "string", "maxLength": 32 },
+        "deliveryDate": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["pendiente", "en_proceso", "terminado", "entregado", "cancelado"] },
+        "items": { "type": "array" },
+        "discount": { "type": "number" },
+        "observations": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "updatedAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "orderNumber",
+        "clientId",
+        "requestDate",
+        "deliveryDate",
+        "status",
+        "items",
+        "discount",
+        "observations",
+        "createdAt",
+        "updatedAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Customer payment or installment recorded for an order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderNumber": { "type": "string", "maxLength": 40 },
+        "clientId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "clientName": { "type": "string", "maxLength": 200 },
+        "date": { "type": "string", "maxLength": 32 },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["Efectivo", "Transferencia", "Otro"] },
+        "observations": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 32 },
+        "serverCreatedAt": { "type": "string", "format": "date-time" },
+        "serverUpdatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "orderId",
+        "orderNumber",
+        "clientId",
+        "clientName",
+        "date",
+        "amount",
+        "method",
+        "observations",
+        "createdAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserWorkspace" },
+      "description": "User workspace root profile and budget configuration isolated per owner UID."
+    },
+    "/users/{userId}/inventory/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Private inventory items belonging to userId."
+    },
+    "/users/{userId}/purchases/{purchaseId}": {
+      "schema": { "$ref": "#/entities/Purchase" },
+      "description": "Private material/tool purchases belonging to userId."
+    },
+    "/users/{userId}/movements/{movementId}": {
+      "schema": { "$ref": "#/entities/InventoryMovement" },
+      "description": "Private inventory movement history belonging to userId."
+    },
+    "/users/{userId}/calculations/{calculationId}": {
+      "schema": { "$ref": "#/entities/SavedCalculation" },
+      "description": "Private saved cost calculations belonging to userId."
+    },
+    "/users/{userId}/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Private client directory (PII) strictly isolated to userId."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Private crochet orders belonging to userId."
+    },
+    "/users/{userId}/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Private order payments belonging to userId."
+    }
+  }
+}

@@ -1,0 +1,480 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny at root
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId && isValidId(userId);
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 128
+        && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidStr(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isOptStr(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isOptNum(data, key) {
+      return !(key in data) || (data[key] is number);
+    }
+
+    // Connectivity probe doc (authenticated only)
+    match /test/connection {
+      allow get: if isSignedIn();
+      allow list, write: if false;
+    }
+
+    // --- Entity Validators (100% aligned with firebase-blueprint.json) ---
+    function isValidUserWorkspace(data, userId) {
+      return data.keys().hasAll(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'email', 'displayName', 'monthlyBudget', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.email, 0, 320)
+        && isValidStr(data.displayName, 0, 120)
+        && (!( 'monthlyBudget' in data ) || data.monthlyBudget == null || data.monthlyBudget is number)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidInventoryItem(data, userId, itemId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'name', 'category', 'itemType', 'quantity', 'unit',
+          'unitCost', 'minStock', 'observations', 'estimatedWearCost', 'status',
+          'createdAt', 'updatedAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'name', 'category', 'itemType', 'quantity', 'unit',
+          'unitCost', 'minStock', 'observations', 'estimatedWearCost', 'status',
+          'retiredAt', 'retireReason', 'retireNotes',
+          'createdAt', 'updatedAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(itemId)
+        && data.id == itemId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.name, 1, 200)
+        && isValidStr(data.category, 1, 60)
+        && data.itemType in ['consumible', 'herramienta']
+        && data.quantity is number
+        && isValidStr(data.unit, 1, 40)
+        && data.unitCost is number && data.unitCost >= 0
+        && data.minStock is number && data.minStock >= 0
+        && isValidStr(data.observations, 0, 1000)
+        && data.estimatedWearCost is number && data.estimatedWearCost >= 0
+        && data.status in ['activo', 'baja']
+        && isOptStr(data, 'retiredAt', 32)
+        && isOptStr(data, 'retireReason', 300)
+        && isOptStr(data, 'retireNotes', 1000)
+        && isValidStr(data.createdAt, 1, 32)
+        && isValidStr(data.updatedAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidPurchase(data, userId, purchaseId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'code', 'inventoryItemId', 'materialName', 'category',
+          'itemType', 'quantity', 'unit', 'totalPrice', 'unitCost', 'supplier',
+          'date', 'invoiceRef', 'observations', 'createdAt',
+          'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'code', 'inventoryItemId', 'materialName', 'category',
+          'itemType', 'quantity', 'unit', 'purchasedQuantity', 'purchasedUnit',
+          'contentPerUnit', 'totalPrice', 'unitCost', 'supplier', 'date',
+          'invoiceRef', 'observations', 'createdAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(purchaseId)
+        && data.id == purchaseId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.code, 1, 40)
+        && isValidId(data.inventoryItemId)
+        && isValidStr(data.materialName, 1, 200)
+        && isValidStr(data.category, 1, 60)
+        && data.itemType in ['consumible', 'herramienta']
+        && data.quantity is number && data.quantity > 0
+        && isValidStr(data.unit, 1, 40)
+        && isOptNum(data, 'purchasedQuantity')
+        && isOptStr(data, 'purchasedUnit', 40)
+        && isOptNum(data, 'contentPerUnit')
+        && data.totalPrice is number && data.totalPrice > 0
+        && data.unitCost is number && data.unitCost >= 0
+        && isValidStr(data.supplier, 0, 200)
+        && isValidStr(data.date, 1, 32)
+        && isValidStr(data.invoiceRef, 0, 120)
+        && isValidStr(data.observations, 0, 1000)
+        && isValidStr(data.createdAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidMovement(data, userId, movementId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'inventoryItemId', 'itemName', 'type', 'quantity',
+          'unit', 'date', 'reason', 'createdAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'inventoryItemId', 'itemName', 'type', 'quantity',
+          'unit', 'date', 'reason', 'referenceType', 'referenceId',
+          'referenceLabel', 'createdAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(movementId)
+        && data.id == movementId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidId(data.inventoryItemId)
+        && isValidStr(data.itemName, 1, 200)
+        && data.type in ['entrada_compra', 'salida_pedido', 'ajuste_manual', 'devolucion_material', 'baja_herramienta']
+        && data.quantity is number
+        && isValidStr(data.unit, 1, 40)
+        && isValidStr(data.date, 1, 32)
+        && isValidStr(data.reason, 1, 500)
+        && (!( 'referenceType' in data ) || data.referenceType in ['compra', 'pedido', 'manual', 'baja'])
+        && isOptStr(data, 'referenceId', 128)
+        && isOptStr(data, 'referenceLabel', 120)
+        && isValidStr(data.createdAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidCalculation(data, userId, calculationId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'productName', 'materials', 'laborMode', 'timeValue',
+          'timeUnit', 'hourlyRate', 'laborCost', 'toolsWearAuto', 'toolsWearCost',
+          'additionalCosts', 'totalProductionCost', 'desiredMarginPercent',
+          'suggestedPrice', 'finalSalePrice', 'estimatedProfit',
+          'actualMarginPercent', 'notes', 'createdAt', 'updatedAt',
+          'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'productName', 'materials', 'laborMode', 'timeValue',
+          'timeUnit', 'hourlyRate', 'laborCost', 'toolsWearAuto', 'toolsWearCost',
+          'additionalCosts', 'totalProductionCost', 'desiredMarginPercent',
+          'suggestedPrice', 'finalSalePrice', 'estimatedProfit',
+          'actualMarginPercent', 'notes', 'createdAt', 'updatedAt',
+          'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(calculationId)
+        && data.id == calculationId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.productName, 1, 200)
+        && data.materials is list && data.materials.size() <= 100
+        && (data.materials.size() == 0 || data.materials[0] is map)
+        && data.laborMode in ['tiempo', 'fijo']
+        && data.timeValue is number
+        && data.timeUnit in ['horas', 'minutos']
+        && data.hourlyRate is number
+        && data.laborCost is number
+        && data.toolsWearAuto is number
+        && data.toolsWearCost is number
+        && data.additionalCosts is number
+        && data.totalProductionCost is number
+        && data.desiredMarginPercent is number
+        && data.suggestedPrice is number
+        && data.finalSalePrice is number
+        && data.estimatedProfit is number
+        && data.actualMarginPercent is number
+        && isValidStr(data.notes, 0, 1000)
+        && isValidStr(data.createdAt, 1, 32)
+        && isValidStr(data.updatedAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidClient(data, userId, clientId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'name', 'phone', 'email', 'address',
+          'observations', 'createdAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'name', 'phone', 'email', 'address',
+          'observations', 'createdAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(clientId)
+        && data.id == clientId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.name, 1, 200)
+        && isValidStr(data.phone, 0, 60)
+        && isValidStr(data.email, 0, 320)
+        && isValidStr(data.address, 0, 300)
+        && isValidStr(data.observations, 0, 1000)
+        && isValidStr(data.createdAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidOrder(data, userId, orderId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'orderNumber', 'clientId', 'requestDate',
+          'deliveryDate', 'status', 'items', 'discount', 'observations',
+          'createdAt', 'updatedAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'orderNumber', 'clientId', 'requestDate',
+          'deliveryDate', 'status', 'items', 'discount', 'observations',
+          'createdAt', 'updatedAt', 'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(orderId)
+        && data.id == orderId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.orderNumber, 1, 40)
+        && isValidId(data.clientId)
+        && isValidStr(data.requestDate, 1, 32)
+        && isValidStr(data.deliveryDate, 0, 32)
+        && data.status in ['pendiente', 'en_proceso', 'terminado', 'entregado', 'cancelado']
+        && data.items is list && data.items.size() >= 1 && data.items.size() <= 100
+        && data.items[0] is map
+        && data.discount is number && data.discount >= 0
+        && isValidStr(data.observations, 0, 1000)
+        && isValidStr(data.createdAt, 1, 32)
+        && isValidStr(data.updatedAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidPayment(data, userId, paymentId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'orderId', 'orderNumber', 'clientId', 'clientName',
+          'date', 'amount', 'method', 'observations', 'createdAt',
+          'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'orderId', 'orderNumber', 'clientId', 'clientName',
+          'date', 'amount', 'method', 'observations', 'createdAt',
+          'serverCreatedAt', 'serverUpdatedAt'
+        ])
+        && isValidId(paymentId)
+        && data.id == paymentId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidId(data.orderId)
+        && isValidStr(data.orderNumber, 1, 40)
+        && isValidId(data.clientId)
+        && isValidStr(data.clientName, 1, 200)
+        && isValidStr(data.date, 1, 32)
+        && data.amount is number && data.amount > 0
+        && data.method in ['Efectivo', 'Transferencia', 'Otro']
+        && isValidStr(data.observations, 0, 1000)
+        && isValidStr(data.createdAt, 1, 32)
+        && data.serverCreatedAt is timestamp
+        && data.serverUpdatedAt is timestamp;
+    }
+
+    // --- Collection Rules (Strict Per-User Isolation) ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidUserWorkspace(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidUserWorkspace(incoming(), userId)
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'monthlyBudget', 'updatedAt'])
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+
+      match /inventory/{itemId} {
+        allow get: if isOwner(userId) && isValidId(itemId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidInventoryItem(incoming(), userId, itemId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidInventoryItem(incoming(), userId, itemId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'category', 'itemType', 'quantity', 'unit', 'unitCost',
+            'minStock', 'observations', 'estimatedWearCost', 'status',
+            'retiredAt', 'retireReason', 'retireNotes', 'updatedAt', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(itemId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /purchases/{purchaseId} {
+        allow get: if isOwner(userId) && isValidId(purchaseId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidPurchase(incoming(), userId, purchaseId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidPurchase(incoming(), userId, purchaseId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'materialName', 'category', 'quantity', 'unit', 'purchasedQuantity',
+            'purchasedUnit', 'contentPerUnit', 'totalPrice', 'unitCost',
+            'supplier', 'date', 'invoiceRef', 'observations', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().code == existing().code
+          && incoming().inventoryItemId == existing().inventoryItemId
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(purchaseId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /movements/{movementId} {
+        allow get: if isOwner(userId) && isValidId(movementId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidMovement(incoming(), userId, movementId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidMovement(incoming(), userId, movementId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'quantity', 'date', 'reason', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(movementId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /calculations/{calculationId} {
+        allow get: if isOwner(userId) && isValidId(calculationId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidCalculation(incoming(), userId, calculationId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidCalculation(incoming(), userId, calculationId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'productName', 'materials', 'laborMode', 'timeValue', 'timeUnit',
+            'hourlyRate', 'laborCost', 'toolsWearAuto', 'toolsWearCost',
+            'additionalCosts', 'totalProductionCost', 'desiredMarginPercent',
+            'suggestedPrice', 'finalSalePrice', 'estimatedProfit',
+            'actualMarginPercent', 'notes', 'updatedAt', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(calculationId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /clients/{clientId} {
+        allow get: if isOwner(userId) && isValidId(clientId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidClient(incoming(), userId, clientId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidClient(incoming(), userId, clientId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'phone', 'email', 'address', 'observations', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(clientId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /orders/{orderId} {
+        allow get: if isOwner(userId) && isValidId(orderId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidOrder(incoming(), userId, orderId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidOrder(incoming(), userId, orderId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'clientId', 'requestDate', 'deliveryDate', 'status', 'items',
+            'discount', 'observations', 'updatedAt', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().orderNumber == existing().orderNumber
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(orderId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /payments/{paymentId} {
+        allow get: if isOwner(userId) && isValidId(paymentId) && existing().ownerId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidPayment(incoming(), userId, paymentId)
+          && incoming().serverCreatedAt == request.time
+          && incoming().serverUpdatedAt == request.time;
+        allow update: if isOwner(userId)
+          && existing().ownerId == request.auth.uid
+          && isValidPayment(incoming(), userId, paymentId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'clientName', 'date', 'amount', 'method', 'observations', 'serverUpdatedAt'
+          ])
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().orderId == existing().orderId
+          && incoming().orderNumber == existing().orderNumber
+          && incoming().clientId == existing().clientId
+          && incoming().createdAt == existing().createdAt
+          && incoming().serverCreatedAt == existing().serverCreatedAt
+          && incoming().serverUpdatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(paymentId) && existing().ownerId == request.auth.uid;
+      }
+    }
+  }
+}

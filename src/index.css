@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: #FAF6F2;
+    color: #3B281E;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    background-color: #17120F;
+    color: #F4ECE4;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: #FAF6F2;
+    color: #3B281E;
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  html.dark body {
+    background-color: #17120F;
+    color: #F4ECE4;
+  }
+
+  h1, h2, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* ============================================================================
+   Dinemelly Warm Espresso Dark Mode Palette
+   Applies exclusively to visual styles & contrast without altering structure
+   ============================================================================ */
+html.dark .bg-\[\#FAF6F2\] { background-color: #17120F; }
+html.dark .bg-\[\#FAF6F2\]\/95 { background-color: rgba(23, 18, 15, 0.95); }
+html.dark .bg-\[\#FDFBFA\] { background-color: #241C17; }
+html.dark .bg-\[\#FBF6F1\] { background-color: #241C17; }
+html.dark .bg-white { background-color: #261E19; }
+html.dark .bg-white\/80 { background-color: rgba(38, 30, 25, 0.9); }
+html.dark .bg-white\/85 { background-color: rgba(38, 30, 25, 0.92); }
+html.dark .bg-\[\#FAF9F7\] { background-color: #2C221D; }
+html.dark .bg-\[\#F8F6F2\] { background-color: #2C221D; }
+html.dark .bg-\[\#F4E7DE\] { background-color: #211915; }
+html.dark .bg-\[\#F3F0EB\] { background-color: #2F251F; }
+html.dark .bg-\[\#F1DFD3\] { background-color: #352922; }
+html.dark .bg-\[\#F3E1D6\] { background-color: #3A2C23; }
+html.dark .bg-\[\#EFE0D4\] { background-color: #352922; }
+html.dark .bg-\[\#E8D6C9\]\/85 { background-color: rgba(45, 35, 29, 0.92); }
+html.dark .bg-\[\#EAD7C9\] { background-color: #3E3129; }
+html.dark .bg-\[\#E7E3DC\] { background-color: #3A2E27; }
+html.dark .bg-\[\#DFBBAE\] { background-color: #6B5041; }
+html.dark .bg-\[\#E6F0E4\] { background-color: rgba(34, 84, 61, 0.35); }
+html.dark .bg-\[\#FEF2F2\] { background-color: rgba(127, 29, 29, 0.28); }
+html.dark .bg-\[\#FFFBEB\] { background-color: rgba(120, 53, 15, 0.28); }
+
+/* Decorative soft blobs */
+html.dark .bg-\[\#F0DFD3\]\/65 { background-color: rgba(68, 50, 39, 0.32); }
+html.dark .bg-\[\#F3E6DC\]\/55 { background-color: rgba(58, 42, 33, 0.28); }
+html.dark .bg-\[\#EAD5C6\]\/65 { background-color: rgba(65, 48, 38, 0.35); }
+html.dark .bg-\[\#EAD5C6\]\/50 { background-color: rgba(65, 48, 38, 0.28); }
+html.dark .bg-\[\#1F1C19\]\/45 { background-color: rgba(8, 6, 5, 0.72); }
+html.dark .bg-\[\#3B281E\]\/40 { background-color: rgba(8, 6, 5, 0.7); }
+
+/* Hover surfaces */
+html.dark .hover\:bg-\[\#FAF9F7\]:hover { background-color: #332822; }
+html.dark .hover\:bg-\[\#FAF6F2\]:hover { background-color: #332822; }
+html.dark .hover\:bg-\[\#F7EFE8\]\/60:hover { background-color: rgba(56, 43, 36, 0.65); }
+html.dark .hover\:bg-\[\#F4E7DE\]:hover { background-color: #352922; }
+html.dark .hover\:bg-\[\#F3F0EB\]:hover { background-color: #352922; }
+html.dark .hover\:bg-\[\#F1DFD3\]:hover { background-color: #42332A; }
+html.dark .hover\:bg-\[\#EBD9CC\]\/70:hover { background-color: rgba(56, 43, 35, 0.85); }
+html.dark .hover\:bg-\[\#EAD5C6\]\/60:hover { background-color: rgba(66, 51, 42, 0.7); }
+html.dark .hover\:bg-\[\#EAD5C6\]:hover { background-color: #42332A; }
+html.dark .hover\:bg-\[\#E7E3DC\]:hover { background-color: #43362E; }
+html.dark .hover\:bg-\[\#FEE2E2\]:hover { background-color: rgba(153, 27, 27, 0.42); }
+html.dark .hover\:bg-\[\#FEF2F2\]:hover { background-color: rgba(127, 29, 29, 0.36); }
+html.dark .hover\:bg-\[\#FFFBEB\]:hover { background-color: rgba(120, 53, 15, 0.38); }
+
+/* Text colors (high contrast on espresso surfaces) */
+html.dark .text-\[\#3B281E\],
+html.dark .text-\[\#1F1C19\] {
+  color: #F5EDE6;
+}
+
+html.dark .text-\[\#4D3A2F\],
+html.dark .text-\[\#4A453F\],
+html.dark .text-\[\#5D473A\],
+html.dark .text-\[\#5A5550\] {
+  color: #DDD0C4;
+}
+
+html.dark .text-\[\#6B5447\],
+html.dark .text-\[\#6E675F\],
+html.dark .text-\[\#7D6659\],
+html.dark .text-\[\#7A6457\],
+html.dark .text-\[\#8D7668\] {
+  color: #B4A294;
+}
+
+html.dark .text-\[\#846858\],
+html.dark .text-\[\#8C634C\],
+html.dark .text-\[\#8C5B42\],
+html.dark .text-\[\#7C5944\],
+html.dark .text-\[\#9E7358\],
+html.dark .text-\[\#AF8064\] {
+  color: #E2B497;
+}
+
+html.dark .text-\[\#7C3A52\] {
+  color: #EA9FB9;
+}
+
+html.dark .text-\[\#15803D\],
+html.dark .text-\[\#436B49\],
+html.dark .text-\[\#2D5033\] {
+  color: #86EFAC;
+}
+
+html.dark .text-\[\#0F766E\] {
+  color: #5EEAD4;
+}
+
+html.dark .text-\[\#B45309\],
+html.dark .text-\[\#78350F\] {
+  color: #FCD34D;
+}
+
+html.dark .text-\[\#B91C1C\] {
+  color: #FCA5A5;
+}
+
+html.dark .placeholder-\[\#9B8578\]::placeholder {
+  color: #8C7A6E;
+}
+
+html.dark .hover\:text-\[\#3B281E\]:hover,
+html.dark .hover\:text-\[\#1F1C19\]:hover {
+  color: #FFFFFF;
+}
+
+html.dark .hover\:text-\[\#7C3A52\]:hover {
+  color: #F5B8CE;
+}
+
+html.dark .hover\:text-\[\#B45309\]:hover {
+  color: #FDE68A;
+}
+
+html.dark .hover\:text-\[\#B91C1C\]:hover {
+  color: #FECACA;
+}
+
+/* Borders & Dividers */
+html.dark .border-\[\#EDE2D8\],
+html.dark .border-\[\#E9D8CC\],
+html.dark .border-\[\#E7E3DC\],
+html.dark .border-\[\#E7DDD4\],
+html.dark .border-\[\#E5D7CD\],
+html.dark .border-\[\#DFC9BA\] {
+  border-color: #3E3129;
+}
+
+html.dark .border-\[\#D9D3CA\],
+html.dark .border-\[\#D7C3B5\] {
+  border-color: #4E3E34;
+}
+
+html.dark .border-\[\#FECACA\] {
+  border-color: #7F1D1D;
+}
+
+html.dark .border-\[\#FDE68A\] {
+  border-color: #78350F;
+}
+
+html.dark .border-\[\#C5DEC1\],
+html.dark .border-\[\#BBF7D0\] {
+  border-color: #22543D;
+}
+
+html.dark .divide-\[\#EDE2D8\] > :not(:last-child),
+html.dark .divide-\[\#E7E3DC\] > :not(:last-child) {
+  border-color: #3E3129;
+}
+
+/* SVG donut track in Dashboard */
+html.dark svg circle[stroke="#EAD7C9"] {
+  stroke: #3E3129;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
